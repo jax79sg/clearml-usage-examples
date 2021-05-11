@@ -1,16 +1,7 @@
 from clearml import Task, Logger
-
-from datetime import datetime
-today = datetime.now()
-print("Today ",today)
-
-task = Task.init(project_name='DETECTRON2',task_name='Inference',task_type='inference', output_uri='https://130.14.2.121:443/clearml-models/artifact')
-task.set_base_docker("harbor.dsta.ai/public/detectron2:v3 --env GIT_SSL_NO_VERIFY=true --env TRAINS_AGENT_GIT_USER=testuser --env TRAINS_AGENT_GIT_PASS=testuser" )
-task.execute_remotely(queue_name="gpu", exit_process=True)
-
-from datetime import datetime
-today = datetime.now()
-print("Today ",today)
+task = Task.init(project_name='DETECTRON2',task_name='Default Model Architecture',task_type='training', output_uri='http://jax79sg.hopto.org:9000/clearml-models/artifact')
+task.set_base_docker("quay.io/jax79sg/detectron2:v4 --env GIT_SSL_NO_VERIFY=true --env TRAINS_AGENT_GIT_USER=testuser --env TRAINS_AGENT_GIT_PASS=testuser" )
+task.execute_remotely(queue_name="single_gpu", exit_process=True)
 
 
 import detectron2
@@ -29,15 +20,17 @@ from detectron2.data import MetadataCatalog, DatasetCatalog
 
 import boto3
 from botocore.client import Config
-s3=boto3.resource('s3', 
-        endpoint_url='https://130.14.2.121:443',
-        aws_access_key_id='clearml-sysuser',
-        aws_secret_access_key='7V3cazuQB/BPN3j9h5ZAeOwmANWP37/1RCpuMeJq',
+s3=boto3.resource('s3',
+        endpoint_url='http://jax79sg.hopto.org:9000',
+        aws_access_key_id='minioadmin',
+        aws_secret_access_key='minioadmin',
         config=Config(signature_version='s3v4'),
         region_name='us-east-1',
         verify=False)
-s3.Bucket('clearml-models').download_file('detectron2/coco-detection/fast_rcnn_R_50_FPN_1x/fast_rcnn_R_50_FPN_1x.yaml','/home/appuser/detectron2_repo/detectron2/model_zoo/configs/COCO-Detection/fast_rcnn_R_50_FPN_1x.yaml')
-s3.Bucket('clearml-models').download_file('detectron2/coco-detection/fast_rcnn_R_50_FPN_1x/model_final_e5f7ce.pkl','/home/appuser/model_final_e5f7ce.pkl')
+
+
+s3.Bucket('digitalhub').download_file('clearml-models/detectron2/coco-detection/fast_rcnn_R_50_FPN_1x/fast_rcnn_R_50_FPN_1x.yaml','/home/appuser/detectron2_repo/detectron2/model_zoo/configs/COCO-Detection/fast_rcnn_R_50_FPN_1x.yaml')
+s3.Bucket('digitalhub').download_file('clearml-models/detectron2/coco-detection/fast_rcnn_R_50_FPN_1x/model_final_e5f7ce.pkl','/home/appuser/model_final_e5f7ce.pkl')
 print("Downnloaded models")
 
 im = cv2.imread("./pic.jpg")
