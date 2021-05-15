@@ -1,7 +1,7 @@
 from clearml import Task, Logger
-task = Task.init(project_name='DETECTRON2',task_name='Default Model Architecture',task_type='training', output_uri='http://jax79sg.hopto.org:9000/clearml-models/artifact')
+task = Task.init(project_name='DETECTRON2',task_name='Default Model Architecture',task_type='training', output_uri='http://mlops.sytes.net:9000/clearml-models/')
 task.set_base_docker("quay.io/jax79sg/detectron2:v4 --env GIT_SSL_NO_VERIFY=true --env TRAINS_AGENT_GIT_USER=testuser --env TRAINS_AGENT_GIT_PASS=testuser" )
-task.execute_remotely(queue_name="single_gpu", exit_process=True)
+task.execute_remotely(queue_name="1gpu", exit_process=True)
 
 
 import detectron2
@@ -94,7 +94,7 @@ if __name__ == "__main__":
    
 ### PULLING DATA FROM RELEVANT PLACES ###
    s3=boto3.resource('s3',
-        endpoint_url='http://jax79sg.hopto.org:9000',
+        endpoint_url='http://mlops.sytes.net:9000',
         aws_access_key_id='minioadmin',
         aws_secret_access_key='minioadmin',
         config=Config(signature_version='s3v4'),
