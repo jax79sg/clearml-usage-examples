@@ -79,7 +79,7 @@ if __name__ == "__main__":
    parser.add_argument('--NUM_WORKERS',type=int,default=2,required=False,help='Number of workers for dataloading')
    parser.add_argument('--IMS_PER_BATCH',type=int,default=2,required=False,help='Training batch size')
    parser.add_argument('--BASE_LR',type=float,default=0.00025,required=False,help='Initial learning rate')
-   parser.add_argument('--MAX_ITER',type=int,default=500,required=False,help='Maximum number of iterations')
+   parser.add_argument('--MAX_ITER',type=int,default=50,required=False,help='Maximum number of iterations')
    parser.add_argument('--BATCH_SIZE_PER_IMAGE',type=int,default=128,required=False,help='MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE')
    parser.add_argument('--NUM_CLASSES',type=int,default=1,required=False,help='Number of classes')
    args = parser.parse_args()
@@ -89,7 +89,7 @@ if __name__ == "__main__":
    
 ### PULLING DATA FROM RELEVANT PLACES ###
    s3=boto3.resource('s3',
-        endpoint_url='http://jax79sg.hopto.org:9000',
+        endpoint_url='http://mlops.sytes.net:9000',
         aws_access_key_id='minioadmin',
         aws_secret_access_key='minioadmin',
         config=Config(signature_version='s3v4'),
