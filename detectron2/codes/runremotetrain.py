@@ -1,6 +1,6 @@
 from clearml import Task, Logger
 task = Task.init(project_name='DETECTRON2',task_name='Default Model Architecture',task_type='training', output_uri='http://mlops.sytes.net:9000/digitalhub/clearml-models/')
-task.set_base_docker("quay.io/jax79sg/detectron2:v4 --env GIT_SSL_NO_VERIFY=true --env TRAINS_AGENT_GIT_USER=testuser --env TRAINS_AGENT_GIT_PASS=testuser" )
+task.set_base_docker("quay.io/jax79sg/detectron2:v4 --env GIT_SSL_NO_VERIFY=true --env TRAINS_AGENT_GIT_USER=testuser --env TRAINS_AGENT_GIT_PASS=testuser" --env SSL_CERT_DIR="/usr/share/ca-certificates/extra/ca.dsta.ai.crt" )
 task.execute_remotely(queue_name="1gpu", exit_process=True)
 
 
