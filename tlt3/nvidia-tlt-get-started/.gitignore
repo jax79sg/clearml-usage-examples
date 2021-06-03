@@ -1,0 +1,7 @@
+.vscode/
+__pycache__/
+.ipynb_checkpoints/
+classification/output
+classification/output_retrain
+classification/pretrained_*
+ngccli/
