@@ -1,7 +1,7 @@
 from clearml import Task, Logger
-task = Task.init(project_name='DETECTRON2',task_name='Default Model Architecture',task_type='training', output_uri='http://mlops.sytes.net:9000/digitalhub/clearml-models/')
-task.set_base_docker("quay.io/jax79sg/detectron2:v4 --env GIT_SSL_NO_VERIFY=true --env TRAINS_AGENT_GIT_USER=testuser --env TRAINS_AGENT_GIT_PASS=testuser" --env SSL_CERT_DIR="/usr/share/ca-certificates/extra/ca.dsta.ai.crt" )
-task.execute_remotely(queue_name="1gpu", exit_process=True)
+task = Task.init(project_name='Balloon Detection',task_name='Detectron3',task_type='training', output_uri='s3://jax79sg.hopto.org:9000/clearml-models/')
+task.set_base_docker("quay.io/jax79sg/detectron2:v4 --env GIT_SSL_NO_VERIFY=true --env TRAINS_AGENT_GIT_USER=testuser --env TRAINS_AGENT_GIT_PASS=testuser" )
+task.execute_remotely(queue_name="1xV100-4ram", exit_process=True)
 
 
 import detectron2
@@ -79,12 +79,14 @@ def get_balloon_dicts(img_dir):
 
 
 if __name__ == "__main__": 
+   from clearml.config import config_obj
+   print(config_obj.get('sdk.aws.s3.credentials'))
    parser = argparse.ArgumentParser()
    parser.add_argument('--TRAIN',type=str,default="balloon_train",required=False,help='Path to training dataset')
    parser.add_argument('--NUM_WORKERS',type=int,default=2,required=False,help='Number of workers for dataloading')
    parser.add_argument('--IMS_PER_BATCH',type=int,default=2,required=False,help='Training batch size')
    parser.add_argument('--BASE_LR',type=float,default=0.00025,required=False,help='Initial learning rate')
-   parser.add_argument('--MAX_ITER',type=int,default=500,required=False,help='Maximum number of iterations')
+   parser.add_argument('--MAX_ITER',type=int,default=200,required=False,help='Maximum number of iterations')
    parser.add_argument('--BATCH_SIZE_PER_IMAGE',type=int,default=128,required=False,help='MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE')
    parser.add_argument('--NUM_CLASSES',type=int,default=1,required=False,help='Number of classes')
    args = parser.parse_args()
@@ -93,33 +95,39 @@ if __name__ == "__main__":
    
    
 ### PULLING DATA FROM RELEVANT PLACES ###
+   dataset_id = "2bc362f3c6194739bfe2b7bcf75b574a"
+   datasets_used=dict(dataset_id="2bc362f3c6194739bfe2b7bcf75b574a")
+   task.connect(datasets_used, name='datasets')
+   from clearml import Dataset
+   print("Downloading Datasets ... ",end="")
+   dataset_path = Dataset.get(dataset_id=datasets_used['dataset_id']).get_local_copy()
+   print("done")
+   print(dataset_path)
+
    s3=boto3.resource('s3',
-        endpoint_url='http://mlops.sytes.net:9000',
-        aws_access_key_id='minioadmin',
-        aws_secret_access_key='minioadmin',
+        endpoint_url='http://jax79sg.hopto.org:9000',
+        aws_access_key_id='jax',
+        aws_secret_access_key='P@ssw0rd',
         config=Config(signature_version='s3v4'),
         region_name='us-east-1',
         verify=False)
-   print("Downloading Datasets ... ",end="")
-   download_s3_folder('digitalhub','clearml-data/balloon','balloon')
-   print("Done")
 
    print("Downloading pretrained models ... ",end="")
-   s3.Bucket('digitalhub').download_file('clearml-models/detectron2/coco-instancesegmentation/mask_rcnn_R_50_FPN_3x/mask_rcnn_R_50_FPN_3x.yaml','/home/appuser/detectron2_repo/detectron2/model_zoo/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml')
-   s3.Bucket('digitalhub').download_file('clearml-models/detectron2/coco-instancesegmentation/mask_rcnn_R_50_FPN_3x/model_final_f10217.pkl','/home/appuser/model_final_f10217.pkl')
+   s3.Bucket('clearml-models').download_file('detectron2/coco-instancesegmentation/mask_rcnn_R_50_FPN_3x/mask_rcnn_R_50_FPN_3x.yaml','/home/appuser/detectron2_repo/detectron2/model_zoo/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml')
+   s3.Bucket('clearml-models').download_file('detectron2/coco-instancesegmentation/mask_rcnn_R_50_FPN_3x/model_final_f10217.pkl','/home/appuser/model_final_f10217.pkl')
    print("Done")
  
 ### Registering dataset as per required by Detectron2 ###  
    print("Registering Datasets into Detectron ... ",end="")
    for d in ["train", "val"]:
-      DatasetCatalog.register("balloon_" + d, lambda d=d: get_balloon_dicts("balloon/" + d))
+      DatasetCatalog.register("balloon_" + d, lambda d=d: get_balloon_dicts(dataset_path+"/" + d))
       MetadataCatalog.get("balloon_" + d).set(thing_classes=["balloon"])
    balloon_metadata = MetadataCatalog.get("balloon_train")
    print("Done")   
    
 
 ### Randomly sampling and showing dataset ###
-   dataset_dicts = get_balloon_dicts("balloon/train")
+   dataset_dicts = get_balloon_dicts(dataset_path+"/train")
    for d in random.sample(dataset_dicts, 3):
       img = cv2.imread(d["file_name"])
       visualizer = Visualizer(img[:, :, ::-1], metadata=balloon_metadata, scale=0.5)
